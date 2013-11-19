@@ -2,6 +2,8 @@
 
 using namespace std;
 using namespace cv; 
+void I_Brick(int, int, int , int, int , int, Mat*);
+void I_Brick_Collision(int, int, int, Mat, bool*, bool*, bool*);
 
 
 void Tetris(){
@@ -11,9 +13,9 @@ void Tetris(){
 	int move = 0;
 	int rotate = 0;
 	int random = rand() % 2 + 1;
-	int random_color_r;
-	int random_color_g;
-	int random_color_b;
+	int random_color_r=0;
+	int random_color_g=0;
+	int random_color_b=0;
 	bool cube= false;
 	bool I= false;
 	bool L= false;
@@ -73,22 +75,14 @@ void Tetris(){
 		}
 
 
-		//Position I
-		if(I && (rotate == 0 || rotate == 2)){
-		Point position1_l(start1_1+move, start1_2 + gravity);
-		Point position2_l(start2_1-40+move, start2_2+80 + gravity);
-		rectangle(image, position2_l,position1_l,Scalar(random_color_b,random_color_g,random_color_r),-1);
-		}
-
-		if(I && (rotate == 1 || rotate == 3)){
-		Point position1_l(start1_1+move, start1_2 + gravity);
-		Point position2_l(start2_1+80+move, start2_2-40 + gravity);
-		rectangle(image, position2_l,position1_l,Scalar(random_color_b,random_color_g,random_color_r),-1);
+		//Position I-Brick
+		if(I){
+		I_Brick(rotate, move, gravity, random_color_b, random_color_g, random_color_r, &image);
 		}
 					
 
 	imshow("Tetris", image);
-	imshow("Test", image_d);
+	imshow("Test", i_mask2);
 	
 	
 	int key = waitKey(10);		
@@ -106,6 +100,7 @@ void Tetris(){
 				if(i_mask2.at<uchar>(start2_2+gravity+1,x) > 0)
 				{
 					collision = true;
+					cout << collision << endl;
 				}
 				if(i_mask2.at<uchar>(y,start2_1+move+1) > 0)
 				{
@@ -130,76 +125,19 @@ void Tetris(){
 		}
 		}
 		// I
-		if(I && (rotate == 0 || rotate == 2)){
-		for(int x = start1_1+move+1; x < start2_1-40+move; x++){
-			for(int y = start1_2+gravity; y < start2_2+80+gravity; y++){
-				
-				if(i_mask2.at<uchar>(start2_2+80+gravity+1,x) > 0)
-				{
-					collision = true;
-				}
-				if(i_mask2.at<uchar>(y,start2_1-40+move+1) > 0)
-				{
-					r_collision = true;
-				}
-				else
-				{
-					r_collision = false;
-				}
-				if(i_mask2.at<uchar>(y,start1_1+move-1) > 0)
-				{
-					l_collision = true;
-				}
-				else
-				{
-					l_collision = false;
-				}
+		if(I){
 			
-			
-				
-			}
+			I_Brick_Collision(rotate, move, gravity, i_mask2, &collision, &r_collision, &l_collision);
+
 		}
-		}
-		
-		if(I && (rotate == 1 || rotate == 3)){
-		for(int x = start1_1+move+1; x < start2_1+80+move; x++){
-			for(int y = start1_2+gravity; y < start2_2-40+gravity; y++){
-				
-				if(i_mask2.at<uchar>(start2_2-40+gravity+1,x) > 0)
-				{
-					collision = true;
-				}
-				if(i_mask2.at<uchar>(y,start2_1+80+move+1) > 0)
-				{
-					r_collision = true;
-				}
-				else
-				{
-					r_collision = false;
-				}
-				if(i_mask2.at<uchar>(y,start1_1+move-1) > 0)
-				{
-					l_collision = true;
-				}
-				else
-				{
-					l_collision = false;
-				}
-			
-			
-				
-			}
-		}
-		}
-		
 	
 		
 	
 
+		cout << r_collision << endl;
 		
 		
-		
-	if((start2_2+gravity > height-20 && cube) || (start2_2+80+gravity > height-20 && I && (rotate == 0 || rotate == 2))|| (start2_2-40+gravity > height-20 && I && (rotate == 1 || rotate == 3)) || collision ){
+	if(collision){
 		image.copyTo(image_d);
 		random_color_r = rand() % 255 + 1;
 		random_color_g = rand() % 255 + 1;
@@ -506,14 +444,16 @@ void Tetris(){
 
 		gravity = 0;
 		collision = false;
+		r_collision = false;
+		l_collision = false;
 	
-			cube= false;
-			I= false;
-			L= false;
-			S= false;
+		cube= false;
+		I= false;
+		L= false;
+		S= false;
 		
 	}
-	gravity = gravity + 5;
+	gravity = gravity + 2;
 
 
 	//Control
@@ -532,33 +472,74 @@ void Tetris(){
 			
 		}
 		if(key == 2490368){ //Arrow-Up (Rotate)
-			rotate++;
-			if(rotate > 3)
+			rotate++;			
+			if(rotate > 3){
 				rotate = 0;
+			}
+			
+
 		}
 	}
 
 	if(I){
-		if(key == 2555904 && move+start2_1 < width-20 && !r_collision && (rotate == 0 || rotate == 2)){ //ArrowRight
-			move = move +40;
+
+		switch(rotate){
+
+		case 0:	if(key == 2555904 &&  !r_collision){ //ArrowRight
+					move = move +40;			
+				}
+				
+				if(key == 2424832 && !l_collision) { //ArrowLeft
+					move = move -40;
+				}
+				break;
+
+		case 1:
+
+				if(key == 2555904 && !r_collision ){ //ArrowRight
+					move = move +40;
+				}
+
+				if(key == 2424832 && !l_collision) { //ArrowLeft
+					move = move -40;
+				}
+				break;
+		
+				
+		case 2: if(key == 2555904 &&  !r_collision){ //ArrowRight
+					move = move +40;			
+				}
+				
+				if(key == 2424832 && !l_collision) { //ArrowLeft
+					move = move -40;
+				}
+				break;
+
+		case 3:
+				if(key == 2555904 && !r_collision ){ //ArrowRight
+					move = move +40;
+				}
+
+				if(key == 2424832 && !l_collision) { //ArrowLeft
+					move = move -40;
+				}
+				break;
+
+
+		}
+		
+		if(key == 2490368 && !collision && !r_collision && !l_collision){ //Arrow-Up (Rotate)
+			rotate++;			
+			if(rotate > 3){
+				rotate = 0;
+			}
+
+			
+
 			
 		}
-
-		if(key == 2555904 && move+start2_1+100 < width-20 && !r_collision && (rotate == 1 || rotate == 3)){ //ArrowRight rotated
-			move = move +40;
-		}
-
-		if(key == 2424832 && move + start1_1 > 20 && !l_collision) { //ArrowLeft
-			move = move -40;
-		}
-					
-		
-		if(key == 2490368){ //Arrow-Up (Rotate)
-			rotate++;
-			if(rotate > 3)
-				rotate = 0;
-		}
 	}
+	
 
 	
 			
@@ -571,11 +552,191 @@ void Tetris(){
 
 	
 	rectangle(image,Point(0,0),Point(width,height),Scalar(128,0,0),20);
+	rectangle(image,Point(0,height-16),Point(width,height),Scalar(128,0,0),-1);
 
 	}
 	
 
 		
+}
+
+void I_Brick(int rotate, int move, int gravity, int random_color_b, int random_color_g, int random_color_r, Mat* image){
+
+	switch(rotate){
+
+		case 0:	
+			{
+				Point position1_l(180+move, 20 + gravity);
+				Point position2_l(219+move, 179 + gravity);
+				rectangle(*image, position2_l,position1_l,Scalar(random_color_b,random_color_g,random_color_r),-1);
+				break;
+			}
+
+		
+		case 1:	
+			{
+				Point position1_l(140+move, 20 + gravity);
+				Point position2_l(299+move, 59 + gravity);
+				rectangle(*image, position2_l,position1_l,Scalar(random_color_b,random_color_g,random_color_r),-1);
+				break;
+			}
+
+		case 2:
+			{
+				Point position1_l(220+move, 20 + gravity);
+				Point position2_l(259+move, 179 + gravity);
+				rectangle(*image, position2_l,position1_l,Scalar(random_color_b,random_color_g,random_color_r),-1);
+				break;
+			}
+
+		case 3:
+			{
+				Point position1_l(140+move, 60 + gravity);
+				Point position2_l(299+move, 99 + gravity);
+				rectangle(*image, position2_l,position1_l,Scalar(random_color_b,random_color_g,random_color_r),-1);
+				break;
+			}
+
+		}
+
+	}
+
+void I_Brick_Collision(int rotate, int move, int gravity, Mat i_mask2, bool* collision, bool* r_collision, bool* l_collision){
+
+
+	switch(rotate){
+
+		case 0:
+				for(int x = 181+move; x < 219+move; x++){
+					for(int y = 20+gravity; y < 179+gravity; y++){
+				
+						if(i_mask2.at<uchar>(180+gravity,x) > 0)
+						{
+							*collision = true;
+						}
+						if(i_mask2.at<uchar>(y,220+move) > 0 || move+259 > 420)
+						{
+							*r_collision = true;
+						}
+						else
+						{
+							*r_collision = false;
+						}
+						if(i_mask2.at<uchar>(y,179+move) > 0 || move + 180 > 20)
+						{
+							*l_collision = true;
+						}
+						else
+						{
+							*l_collision = false;
+						}
+			
+			
+				
+					}
+				}
+				
+				break;
+
+
+		case 1:	
+					for(int x = 141+move; x < 299+move; x++){
+						for(int y = 20+gravity; y < 59+gravity; y++){
+				
+							if(i_mask2.at<uchar>(60+gravity,x) > 0)
+							{
+								*collision = true;
+							}
+							if(i_mask2.at<uchar>(y,300+move) > 0 ||  move+319 > 420)
+							{
+								*r_collision = true;
+							}
+							else
+							{
+								*r_collision = false;
+							}
+							if(i_mask2.at<uchar>(y,139+move) > 0 || move + 220 > 20)
+							{
+								*l_collision = true;
+							}
+							else
+							{
+								*l_collision = false;
+							}
+			
+			
+				
+						}
+					}
+				
+				break;
+
+		case 2:
+				for(int x = 220+move+1; x < 259+move; x++){
+					for(int y = 20+gravity; y < 179+gravity; y++){
+				
+						if(i_mask2.at<uchar>(180+gravity,x) > 0)
+						{
+							*collision = true;
+						}
+						if(i_mask2.at<uchar>(y,260+move) > 0 || move+299 > 420)
+						{
+							*r_collision = true;
+						}
+						else
+						{
+							*r_collision = false;
+						}
+						if(i_mask2.at<uchar>(y,219+move) > 0 || move + 220 > 20 )
+						{
+							*l_collision = true;
+						}
+						else
+						{
+							*l_collision = false;
+						}
+			
+			
+				
+					}
+				}
+				break;
+		
+		case 3:	
+					for(int x = 140+move+1; x < 299+move; x++){
+						for(int y = 60+gravity; y < 99+gravity; y++){
+				
+							if(i_mask2.at<uchar>(100+gravity,x) > 0)
+							{
+								*collision = true;
+							}
+							if(i_mask2.at<uchar>(y,300+move) > 0 || move + 319 > 420 )
+							{
+								*r_collision = true;
+							}
+							else
+							{
+								*r_collision = false;
+							}
+							if(i_mask2.at<uchar>(y,139+move) > 0 || move + 220 > 20 )
+							{
+								*l_collision = true;
+							}
+							else
+							{
+								*l_collision = false;
+							}
+			
+			
+				
+						}
+					}
+				
+				break;
+
+
+		}
+
 }
 	
 	
